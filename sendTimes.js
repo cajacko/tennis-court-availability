@@ -2,8 +2,8 @@
 
 require('dotenv').config();
 var zipFolder = require('zip-folder');
-// const nodemailer = require('nodemailer');
 const sendmail = require('sendmail')();
+const del = require('del');
 
 zipFolder('./json', 'times.zip', function(err) {
     if(err) {
@@ -25,6 +25,10 @@ zipFolder('./json', 'times.zip', function(err) {
         }, function(err, reply) {
           console.log(err && err.stack);
           console.dir(reply);
+
+          del(['json/*.json']).then(paths => {
+              console.log('Deleted files:\n', paths.join('\n'));
+          });
       });
     }
 });
