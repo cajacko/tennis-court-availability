@@ -15,11 +15,12 @@
     "version:minor": "npm version minor",
     "version:major": "npm version major",
     "publish": "npm publish",
-    "start": "npm run gettimes",
+    "start": "docker run -it --name tennis tennis",
     "gettimes": "node getTimes.js",
     "sendtimes": "node sendTimes.js",
     "lint": "eslint **/*.js",
-    "eslint": "eslint"
+    "eslint": "eslint",
+    "build": "docker build -t tennis ."
   },
   "engine": {
     "node": ">=6.9.1"
