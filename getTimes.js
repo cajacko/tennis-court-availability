@@ -4,32 +4,31 @@ require('dotenv').config();
 require('chromedriver');
 require('phantomjs-prebuilt');
 const webdriver = require('selenium-webdriver');
-var jsdom = require("jsdom");
+const jsdom = require('jsdom');
 const fs = require('fs');
 
+const timeout = 1000;
 const By = webdriver.By;
-const until = webdriver.until;
-
-var driver = new webdriver.Builder()
+const driver = new webdriver.Builder()
     // .forBrowser('chrome')
     .forBrowser('phantomjs')
     .build();
 
-const timeout = 1000;
-
 function twoDigitTimeString(number) {
-  if (number < 10) {
-    number = '0' + number;
+  let value = number;
+
+  if (value < 10) {
+    value = `0${value}`;
   }
 
-  return number;
+  return value;
 }
 
 function timeFourCharacters(date) {
   const hours = twoDigitTimeString(date.getHours());
   const minutes = twoDigitTimeString(date.getMinutes());
 
-  return hours + '-' + minutes;
+  return `${hours}-${minutes}`;
 }
 
 driver.get('https://better.legendonlineservices.co.uk');
@@ -37,43 +36,44 @@ driver.findElement(By.name('login.Email')).sendKeys(process.env.EMAIL);
 driver.findElement(By.name('login.Password')).sendKeys(process.env.PASSWORD);
 driver.findElement(By.css('#login')).click();
 driver.get('https://better.legendonlineservices.co.uk/camden_-_kentish_tow/BookingsCentre/Index');
-driver.findElement(By.linkText('Islington')).click().then(function() {
-  setTimeout(function() {
-    driver.findElement(By.css('.rg_11636:nth-child(141) span')).click().then(function() {
-      setTimeout(function() {
-        driver.findElement(By.css('#behaviours .activityItem:nth-child(2) label')).click().then(function() {
-          setTimeout(function() {
-            driver.findElement(By.css('#activities .activityItem:first-child label')).click().then(function() {
-              setTimeout(function() {
-                driver.findElement(By.css('#bottomsubmit')).click().then(function() {
-                  setTimeout(function() {
-                    driver.switchTo().frame("TB_iframeContent");
-                    driver.findElement(By.css('#resultContainer')).then(function(element) {
-                      element.getAttribute("innerHTML").then(function(text) {
+driver.findElement(By.linkText('Islington')).click().then(() => {
+  setTimeout(() => {
+    driver.findElement(By.css('.rg_11636:nth-child(141) span')).click().then(() => {
+      setTimeout(() => {
+        driver.findElement(By.css('#behaviours .activityItem:nth-child(2) label')).click().then(() => {
+          setTimeout(() => {
+            driver.findElement(By.css('#activities .activityItem:first-child label')).click().then(() => {
+              setTimeout(() => {
+                driver.findElement(By.css('#bottomsubmit')).click().then(() => {
+                  setTimeout(() => {
+                    driver.switchTo().frame('TB_iframeContent');
+                    driver.findElement(By.css('#resultContainer')).then((element) => {
+                      element.getAttribute('innerHTML').then((text) => {
                         jsdom.env(
                           text,
-                          ["http://code.jquery.com/jquery.js"],
-                          function (err, window) {
+                          ['http://code.jquery.com/jquery.js'],
+                          (err, window) => {
+                            const availabilty = {};
+                            let currentDay = 'no-day';
 
-                            var availabilty = {};
-                            var currentDay = 'no-day';
-
-                            window.$('.sportsHallSlotWrapper > div').each(function(index, div) {
-                              var text = window.$(div).text();
+                            window.$('.sportsHallSlotWrapper > div').each((index, div) => {
+                              const itemText = window.$(div).text();
+                              let re;
+                              let m;
 
                               if (!window.$(div).hasClass('sporthallSlot')) {
-                                currentDay = text;
+                                currentDay = itemText;
                                 availabilty[currentDay] = {};
                               } else if (window.$(div).find('.sporthallSlotAddLink').length) {
-                                var re = /Ctr([0-9]*:[0-9]*) ([0-9]*)/g;
-                                var m = re.exec(text);
+                                re = /Ctr([0-9]*:[0-9]*) ([0-9]*)/g;
+                                m = re.exec(itemText);
 
                                 if (m) {
                                   availabilty[currentDay][m[1]] = m[2];
                                 }
                               } else {
-                                var re = /Ctr([0-9]*:[0-9]*)/g;
-                                var m = re.exec(text);
+                                re = /Ctr([0-9]*:[0-9]*)/g;
+                                m = re.exec(itemText);
 
                                 if (m) {
                                   availabilty[currentDay][m[1]] = 0;
@@ -83,13 +83,14 @@ driver.findElement(By.linkText('Islington')).click().then(function() {
 
                             const monthNum = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
                             const nowDate = new Date();
-                            let date = nowDate.getFullYear() + '-' + monthNum[nowDate.getMonth()] + '-' + twoDigitTimeString(nowDate.getDate());
-                            date = date + ' ' + timeFourCharacters(nowDate);
-                            const fileName = './json/' + date + '.json';
+                            let date = `${nowDate.getFullYear()}-${monthNum[nowDate.getMonth()]}-${twoDigitTimeString(nowDate.getDate())}`;
+                            date = `${date} ${timeFourCharacters(nowDate)}`;
+                            const fileName = `./json/${date}.json`;
 
                             const json = JSON.stringify(availabilty, null, 2);
                             fs.writeFileSync(fileName, json, 'utf8');
 
+                            // eslint-disable-next-line
                             console.log(json);
                             driver.quit();
                           }
@@ -106,7 +107,3 @@ driver.findElement(By.linkText('Islington')).click().then(function() {
     });
   }, timeout);
 });
-
-
-// driver.wait(until.titleIs('webdriver - Google Search'), 1000);
-// driver.quit();
